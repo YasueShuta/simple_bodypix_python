@@ -1,0 +1,17 @@
+# GitIgnore Template for Python Project
+# pycache
+__pycache__/
+*.py[cdo]
+
+# pythondata
+*.pickle
+*.npy
+
+# wheel
+build/
+lib/
+*.egg-info/
+*.whl
+
+# その他
+bodypix_resnet50_float_model-stride16/
