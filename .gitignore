@@ -13,5 +13,8 @@ lib/
 *.egg-info/
 *.whl
 
+# VSCode
+.vscode/
+
 # その他
 bodypix_resnet50_float_model-stride16/
