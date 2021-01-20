@@ -11,8 +11,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 
 # PATHS
-imagePath = 'path/to/.jpg/file'
-modelPath = 'path/to/folder/containing/model.json'
+imagePath = "C:/Users/shuta/Pictures/yasue_face.jpg"
+modelPath = "bodypix_resnet50_float_model-stride16"
+# imagePath = 'path/to/.jpg/file'
+# modelPath = 'path/to/folder/containing/model.json'
 
 # CONSTANTS
 OutputStride = 16
