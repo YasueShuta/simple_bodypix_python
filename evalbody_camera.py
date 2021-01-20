@@ -11,7 +11,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 
 # PATHS
-# imagePath = "C:/Users/shuta/Pictures/yasue_face.jpg"
+# imagePath = "path/to/image"
 modelPath = "bodypix_resnet50_float_model-stride16"
 skip_load_model = False
 measure_time = True
