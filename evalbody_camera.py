@@ -71,26 +71,33 @@ print(output_tensor_names)
 input_tensor = graph.get_tensor_by_name(input_tensor_names[0])
 
 # Preprocessing Image
-# For Resnet
-def preprocessing_image(x):
+def preprocess_image(x):
+    # For Resnet
     if any('resnet_v1' in name for name in output_tensor_names):
         # add imagenet mean - extracted from body-pix source
         m = np.array([-123.15, -115.90, -103.06])
         x = np.add(x, m)
-    # # For Mobilenet
+    # For Mobilenet
     elif any('MobilenetV1' in name for name in output_tensor_names):
         x = (x/127.5)-1
     else:
         print('Unknown Model')
     return x[tf.newaxis, ...]
 
-sample_image = preprocessing_image(x)
+def get_input_from_frame(frame):
+    img = Image.fromarray(frame)
+    img = img.resize((targetWidth, targetHeight))
+    x = tf.keras.preprocessing.image.img_to_array(img, dtype=np.float32)
+    return preprocess_image(x), img
+
+sample_image = preprocess_image(x)
 print("done.\nRunning inference...", end="")
     
+# open tensorflow session
+sess = tf.compat.v1.Session(graph=graph)
 # evaluate the loaded model directly
 def eval_model(graph, input_):
-    with tf.compat.v1.Session(graph=graph) as sess:
-        results = sess.run(output_tensor_names, feed_dict={
+    results = sess.run(output_tensor_names, feed_dict={
                         input_tensor: input_})
     return results
 results = eval_model(graph, sample_image)
@@ -149,10 +156,7 @@ while True:
     cv2.imshow("Live", frame)
 
     # Create mask
-    img = Image.fromarray(frame)
-    img = img.resize((targetWidth, targetHeight))
-    x = tf.keras.preprocessing.image.img_to_array(img, dtype=np.float32)
-    x = preprocessing_image(x)
+    x, img = get_input_from_frame(frame)
     lap1 = time()
     results = eval_model(graph, x)
     lap2 = time()
@@ -192,7 +196,9 @@ while True:
             count, int(loop_ms), int(session_ms), fps), file=timeFile)
         count += 1
 
+# Closing
 with open("test/measure_time.csv", "w") as f:
     f.write(timeFile.getvalue())
+sess.close()
 cap.release()
 cv2.destroyAllWindows()
