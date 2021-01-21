@@ -186,8 +186,8 @@ while True:
         loop_ms = (done - start) * 1000
         session_ms = (lap2 - lap1) * 1000
         fps = 1000 / loop_ms
-        print("Loop: {} ms, Session: {} ms, FPS: {}".format(
-            int(loop_ms), int(session_ms), fps))
+        print("[{:04d}] Loop: {} ms, Session: {} ms, FPS: {}".format(
+            count, int(loop_ms), int(session_ms), fps))
         print("{}, {}, {}, {}".format(
             count, int(loop_ms), int(session_ms), fps), file=timeFile)
         count += 1
