@@ -48,7 +48,6 @@ img = Image.fromarray(frame)
 
 assert img is not None
 # img = tf.keras.preprocessing.image.load_img(imagePath)
-print(img.size, type(img.size), type(img))
 imgWidth, imgHeight = img.size
 targetWidth = (int(imgWidth) // OutputStride) * OutputStride + 1
 targetHeight = (int(imgHeight) // OutputStride) * OutputStride + 1
@@ -146,6 +145,18 @@ def get_segmentation_mask(results, segmentation_threshold=0.7):
     return ret
 
 
+# Segmentation Threshold Trackbar
+change_segmentation_threshold = True
+dynamic_threshold = 0.7
+def change_threshold(x):
+    global dynamic_threshold
+    dynamic_threshold = x / 100
+
+if change_segmentation_threshold:
+    winName = "Foreground Segmentation"
+    cv2.namedWindow(winName)
+    cv2.createTrackbar("Threshold (%)", winName, 0, 100, change_threshold)
+
 # Load image from camera and calc segmentation
 saveID = 1
 count = 1
@@ -161,7 +172,11 @@ while True:
     lap1 = time()
     results = eval_model(graph, x)
     lap2 = time()
-    mask = get_segmentation_mask(results)
+    if change_segmentation_threshold:
+        print("Th:", dynamic_threshold)
+        mask = get_segmentation_mask(results, dynamic_threshold)
+    else:
+        mask = get_segmentation_mask(results)
     # resize_mask = mask * OutputStride
     # cv2.imshow("Mask", resize_mask)
 
