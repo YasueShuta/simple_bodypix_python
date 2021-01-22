@@ -19,3 +19,4 @@ lib/
 # その他
 bodypix_resnet50_float_model-stride16/
 test/
+bodypix_mobilenet_float_050_model-stride16/
