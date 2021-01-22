@@ -12,7 +12,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 
 # PATHS
 # imagePath = "path/to/image"
-modelPath = "bodypix_resnet50_float_model-stride16"
+# modelPath = "bodypix_resnet50_float_model-stride16"
+modelPath = "bodypix_mobilenet_float_050_model-stride16"
 skip_load_model = False
 measure_time = True
 
