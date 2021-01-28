@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 from utils import load_graph_model, get_input_tensors, get_output_tensors
 import tensorflow as tf
-from time import time
+from time import time, sleep
 from io import StringIO
 # make tensorflow stop spamming messages
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
@@ -20,6 +20,7 @@ measure_time = True
 # CONSTANTS
 OutputStride = 16
 SessionInterval = 5 # for reduce session access
+TargetFPS = 20 # for sleep process
 
 if not os.path.exists("test"):
     os.mkdir("test")
@@ -163,6 +164,11 @@ saveID = 1
 saveCount = 1
 loopCount = 0
 mask = None
+if TargetFPS > 0:
+    target_laptime = 1 / TargetFPS
+else:
+    target_laptime = -1
+
 while True:
     start = time()
     isOk, frame = cap.read()
@@ -184,6 +190,8 @@ while True:
         # resize_mask = mask * OutputStride
         # cv2.imshow("Mask", resize_mask)
     else:
+        img = Image.fromarray(frame)
+        img = img.resize((targetWidth, targetHeight))
         lap1,lap2 = 0,0
 
     # Draw Segmented Output
@@ -217,6 +225,10 @@ while True:
         print("{}, {}, {}, {}".format(
             saveCount, int(loop_ms), int(session_ms), fps), file=timeFile)
         saveCount += 1
+    
+    duration = target_laptime - (done - start)
+    if target_laptime > 0 and duration > 0:
+        sleep(target_laptime - (done - start))
     loopCount += 1
 
 # Closing
