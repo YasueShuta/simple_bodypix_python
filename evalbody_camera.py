@@ -151,7 +151,6 @@ def get_segmentation_mask(results, segmentation_threshold=0.7):
 
 
 # Segmentation Threshold Trackbar
-change_segmentation_threshold = True
 dynamic_threshold = 0.7
 def change_threshold(x):
     global dynamic_threshold
@@ -164,8 +163,7 @@ if change_segmentation_threshold:
 
 # Load image from camera and calc segmentation
 saveID = 1
-saveCount = 1
-loopCount = 0
+count = 0
 mask = None
 if TargetFPS > 0:
     target_laptime = 1 / TargetFPS
