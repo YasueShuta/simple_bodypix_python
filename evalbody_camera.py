@@ -17,8 +17,9 @@ modelPath = "bodypix_mobilenet_float_050_model-stride16"
 skip_load_model = False
 measure_time = True
 
-# # CONSTANTS
+# CONSTANTS
 OutputStride = 16
+SessionInterval = 5 # for reduce session access
 
 if not os.path.exists("test"):
     os.mkdir("test")
@@ -159,7 +160,9 @@ if change_segmentation_threshold:
 
 # Load image from camera and calc segmentation
 saveID = 1
-count = 1
+saveCount = 1
+loopCount = 0
+mask = None
 while True:
     start = time()
     isOk, frame = cap.read()
@@ -167,18 +170,21 @@ while True:
         continue
     cv2.imshow("Live", frame)
 
-    # Create mask
-    x, img = get_input_from_frame(frame)
-    lap1 = time()
-    results = eval_model(graph, x)
-    lap2 = time()
-    if change_segmentation_threshold:
-        print("Th:", dynamic_threshold)
-        mask = get_segmentation_mask(results, dynamic_threshold)
+    if loopCount % SessionInterval == 0:
+        # Create mask
+        x, img = get_input_from_frame(frame)
+        lap1 = time()
+        results = eval_model(graph, x)
+        lap2 = time()
+        if change_segmentation_threshold:
+            print("Th:", dynamic_threshold)
+            mask = get_segmentation_mask(results, dynamic_threshold)
+        else:
+            mask = get_segmentation_mask(results)
+        # resize_mask = mask * OutputStride
+        # cv2.imshow("Mask", resize_mask)
     else:
-        mask = get_segmentation_mask(results)
-    # resize_mask = mask * OutputStride
-    # cv2.imshow("Mask", resize_mask)
+        lap1,lap2 = 0,0
 
     # Draw Segmented Output
     mask_img = Image.fromarray(mask * 255)
@@ -207,10 +213,11 @@ while True:
         session_ms = (lap2 - lap1) * 1000
         fps = 1000 / loop_ms
         print("[{:04d}] Loop: {} ms, Session: {} ms, FPS: {}".format(
-            count, int(loop_ms), int(session_ms), fps))
+            saveCount, int(loop_ms), int(session_ms), fps))
         print("{}, {}, {}, {}".format(
-            count, int(loop_ms), int(session_ms), fps), file=timeFile)
-        count += 1
+            saveCount, int(loop_ms), int(session_ms), fps), file=timeFile)
+        saveCount += 1
+    loopCount += 1
 
 # Closing
 with open("test/measure_time.csv", "w") as f:
