@@ -169,7 +169,7 @@ if TargetFPS > 0:
     target_laptime = 1 / TargetFPS
 else:
     target_laptime = -1
-
+done=-1
 while True:
     start = time()
     isOk, frame = cap.read()
@@ -177,7 +177,7 @@ while True:
         continue
     cv2.imshow("Live", frame)
 
-    if loopCount % SessionInterval == 0:
+    if count % SessionInterval == 0:
         # Create mask
         x, img = get_input_from_frame(frame)
         lap1 = time()
@@ -216,21 +216,24 @@ while True:
         cv2.imwrite("test/result{}.jpg".format(saveID), fg)
         saveID += 1
 
-    done = time()
-    if measure_time:
-        loop_ms = (done - start) * 1000
+    prev,done = done,time()
+
+    if measure_time and prev >= 0:
+        loop_ms = (done - prev) * 1000
+        process_ms = (done - start) * 1000
         session_ms = (lap2 - lap1) * 1000
         fps = 1000 / loop_ms
-        print("[{:04d}] Loop: {} ms, Session: {} ms, FPS: {}".format(
-            saveCount, int(loop_ms), int(session_ms), fps))
-        print("{}, {}, {}, {}".format(
-            saveCount, int(loop_ms), int(session_ms), fps), file=timeFile)
-        saveCount += 1
+        if not skip_print_stdout:
+            print("[{:04d}] Loop: {} ms, Process {} ms, Session: {} ms, FPS: {}".format(
+                count, int(loop_ms), int(process_ms), int(session_ms), fps))
+        print("{}, {}, {}, {}, {}".format(
+            count, int(loop_ms), int(process_ms), int(session_ms), fps), file=timeFile)
     
-    duration = target_laptime - (done - start)
+    duration = target_laptime - (time() - start)
     if target_laptime > 0 and duration > 0:
-        sleep(target_laptime - (done - start))
-    loopCount += 1
+        sleep(duration)
+
+    count += 1
 
 # Closing
 with open("test/measure_time.csv", "w") as f:
