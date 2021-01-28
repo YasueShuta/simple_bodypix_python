@@ -237,7 +237,7 @@ while True:
 
 # Closing
 filename = "test/measure_time_intv{}_fps{}.csv".format(SessionInterval, TargetFPS)
-with open("test/measure_time.csv", "w") as f:
+with open(filename, "w") as f:
     f.write(timeFile.getvalue())
 sess.close()
 cap.release()
