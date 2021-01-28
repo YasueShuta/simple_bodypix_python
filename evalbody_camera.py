@@ -14,13 +14,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3"
 # imagePath = "path/to/image"
 # modelPath = "bodypix_resnet50_float_model-stride16"
 modelPath = "bodypix_mobilenet_float_050_model-stride16"
-skip_load_model = False
-measure_time = True
 
 # CONSTANTS
 OutputStride = 16
 SessionInterval = 5 # for reduce session access
 TargetFPS = 20 # for sleep process
+skip_load_model = False
+skip_print_stdout = True
+measure_time = True
+change_segmentation_threshold = False
 
 if not os.path.exists("test"):
     os.mkdir("test")
