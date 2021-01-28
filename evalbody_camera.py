@@ -34,7 +34,8 @@ if not skip_load_model:
 
 if measure_time:
     timeFile = StringIO()
-    timeFile.write(",Loop (ms), Session (ms), FPS (/sec)\n")
+    timeFile.write("Session Interval, {}, Target FPS, {}\n".format(SessionInterval, TargetFPS))
+    timeFile.write(",Loop (ms), Process (ms), Session (ms), FPS (/sec)\n")
 
 
 
