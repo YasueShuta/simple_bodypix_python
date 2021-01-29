@@ -23,6 +23,8 @@ skip_load_model = False
 skip_print_stdout = True
 measure_time = True
 change_segmentation_threshold = False
+change_input_rect = True
+input_rect_bounds = [0.32, 0.18, 0.36, 0.64] # [x,y,w,h]
 
 if not os.path.exists("test"):
     os.mkdir("test")
@@ -44,22 +46,65 @@ cap = cv2.VideoCapture(0)
 isOk, frame = cap.read()
 print("Capture:", isOk)
 
-height,width = 720, 1280
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-cap.set(cv2.CAP_PROP_FPS, 60)
+# height,width = 720, 1280
+# cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+# cap.set(cv2.CAP_PROP_FPS, 60)
 
 img = Image.fromarray(frame)
 
 assert img is not None
 # img = tf.keras.preprocessing.image.load_img(imagePath)
 imgWidth, imgHeight = img.size
-targetWidth = (int(imgWidth) // OutputStride) * OutputStride + 1
-targetHeight = (int(imgHeight) // OutputStride) * OutputStride + 1
+class TargetRect:
+    def __init__(self, x, y, w, h):
+        self.set_rect(x,y,w,h)
+    def set_rect(self, x, y, w, h):
+        self.x = int(x)
+        self.y = int(y)
+        self.w = (int(w) // OutputStride) * OutputStride + 1
+        self.h = (int(h) // OutputStride) * OutputStride + 1
+    def resize_image(self, img):
+        w,h = img.size
+        # print(w, h, self.w, self.h)
+        w = max(w, self.w)
+        h = max(h, self.h)
+        img = img.resize((w, h))
+        return img
+    def get_roi_from_image(self, img, dtype=np.float32):
+        img = self.resize_image(img)
+        array = np.array(img, dtype=dtype)
+        return img, array, self.get_roi(array)
+    def get_roi(self, array):
+        ex = self.x + self.w #+ 1
+        ey = self.y + self.h #+ 1
+        return array[self.y:ey, self.x:ex]        
+    def extract_fg(self, img, mask):
+        mask_img = Image.fromarray(mask * 255)
+        mask_img = mask_img.resize(
+            (rect.w, rect.h), Image.LANCZOS).convert("RGB")
+        mask_img = tf.keras.preprocessing.image.img_to_array(
+            mask_img, dtype=np.uint8)
 
-print(imgHeight, imgWidth, targetHeight, targetWidth)
-img = img.resize((targetWidth, targetHeight))
-x = tf.keras.preprocessing.image.img_to_array(img, dtype=np.float32)
+        _, fg, roi = rect.get_roi_from_image(img, dtype=np.uint8)
+        ret = np.zeros(fg.shape, dtype=np.uint8)
+        ret[rect.y:rect.y+rect.h, rect.x:rect.x+rect.w] = np.bitwise_and(roi, mask_img)
+        return ret
+
+
+# input rect(x, y, w, h)
+rect = TargetRect(0, 0, imgWidth, imgHeight)
+if change_input_rect:
+    x = imgWidth * input_rect_bounds[0]
+    y = imgHeight * input_rect_bounds[1]
+    w = imgWidth * input_rect_bounds[2]
+    h = imgHeight * input_rect_bounds[3]
+    rect.set_rect(x, y, w, h)
+
+print(imgHeight, imgWidth, rect.h, rect.w)
+# img = img.resize((targetWidth, targetHeight))
+img, _, x = rect.get_roi_from_image(img)
+# x = tf.keras.preprocessing.image.img_to_array(roi, dtype=np.float32)
 InputImageShape = x.shape
 print("Input Image Shape in hwc", InputImageShape)
 
@@ -91,8 +136,9 @@ def preprocess_image(x):
 
 def get_input_from_frame(frame):
     img = Image.fromarray(frame)
-    img = img.resize((targetWidth, targetHeight))
-    x = tf.keras.preprocessing.image.img_to_array(img, dtype=np.float32)
+    # img = img.resize((targetWidth, targetHeight))
+    img, _, x = rect.get_roi_from_image(img)
+    # x = tf.keras.preprocessing.image.img_to_array(roi, dtype=np.float32)
     return preprocess_image(x), img
 
 sample_image = preprocess_image(x)
@@ -192,19 +238,22 @@ while True:
         # cv2.imshow("Mask", resize_mask)
     else:
         img = Image.fromarray(frame)
-        img = img.resize((targetWidth, targetHeight))
+        img = rect.resize_image(img)
+        # img = img.resize((targetWidth, targetHeight))
         lap1,lap2 = 0,0
 
     # Draw Segmented Output
-    mask_img = Image.fromarray(mask * 255)
-    mask_img = mask_img.resize(
-        (targetWidth, targetHeight), Image.LANCZOS).convert("RGB")
-    mask_img = tf.keras.preprocessing.image.img_to_array(
-        mask_img, dtype=np.uint8)
+    fg = rect.extract_fg(img, mask)
+    # mask_img = Image.fromarray(mask * 255)
+    # mask_img = mask_img.resize(
+    #     (rect.w, rect.h), Image.LANCZOS).convert("RGB")
+    # mask_img = tf.keras.preprocessing.image.img_to_array(
+    #     mask_img, dtype=np.uint8)
 
-    segmentationMask_inv = np.bitwise_not(mask_img)
-    fg = np.bitwise_and(np.array(img), np.array(
-        mask_img))
+    # segmentationMask_inv = np.bitwise_not(mask_img)
+    # _, fg, roi = rect.get_roi_from_image(img, dtype=np.uint8)
+    # # print(type(roi), type(mask_img), roi.dtype, roi.shape, mask_img.dtype, mask_img.shape)
+    # fg = np.bitwise_and(roi, np.array(mask_img))
     cv2.imshow("Foreground Segmentation", fg)
 
     key = cv2.waitKey(1)
