@@ -17,7 +17,7 @@ modelPath = "bodypix_mobilenet_float_050_model-stride16"
 
 # CONSTANTS
 OutputStride = 16
-SessionInterval = 5 # for reduce session access
+SessionInterval = 10 # for reduce session access
 TargetFPS = 20 # for sleep process
 skip_load_model = False
 skip_print_stdout = True
